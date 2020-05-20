@@ -23,14 +23,23 @@ namespace BooksApiWithAuth
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // requires using Microsoft.Extensions.Options
+            //application settings from appsettings
+            services.Configure<BookstoreApplicationSettings>(
+                Configuration.GetSection(nameof(BookstoreApplicationSettings)));
+
+            services.AddSingleton<IBookstoreApplicationSettings>(sp =>
+                sp.GetRequiredService<IOptions<BookstoreApplicationSettings>>().Value);
+
+            //db settings from appsettings
             services.Configure<BookstoreDatabaseSettings>(
                 Configuration.GetSection(nameof(BookstoreDatabaseSettings)));
 
             services.AddSingleton<IBookstoreDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<BookstoreDatabaseSettings>>().Value);
 
+            //singletons
             services.AddSingleton<BookService>();
+            services.AddSingleton<ApiUserService>();
 
             services.AddControllers()
                 .AddNewtonsoftJson(options => options.UseMemberCasing());
