@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using System.IO;
 
 namespace BooksApiWithAuth
 {
@@ -31,7 +33,7 @@ namespace BooksApiWithAuth
             services.AddSingleton<BookService>();
 
             services.AddControllers()
-                .AddNewtonsoftJson(options => options.UseMemberCasing()); ;
+                .AddNewtonsoftJson(options => options.UseMemberCasing());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -45,6 +47,13 @@ namespace BooksApiWithAuth
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            //to load the index.html page
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(Directory.GetCurrentDirectory(), "StaticPages"))
+            });
 
             app.UseAuthorization();
 
