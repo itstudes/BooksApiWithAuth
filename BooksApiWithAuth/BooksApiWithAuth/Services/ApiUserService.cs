@@ -11,7 +11,30 @@ using System.Text;
 
 namespace BooksApiWithAuth.Services
 {
-    public class ApiUserService
+    public interface IApiUserService
+    {
+        (ApiUser user, string token) Authenticate(string password, string username = "", string email = "");
+
+        List<ApiUser> GetAll();
+
+        ApiUser GetById(string id);
+
+        ApiUser GetByUsername(string username);
+
+        ApiUser GetByEmail(string email);
+
+        List<ApiUser> Search(string firstName = "", string lastName = "", UserRoles role = UserRoles.noRole);
+
+        void Create(NewApiUser newApiUser);
+
+        void Update(string id, ApiUser newUserInfo);
+
+        void Remove(ApiUser userToDelete);
+
+        void Remove(string id);
+    }
+
+    public class ApiUserService : IApiUserService
     {
         private readonly IMongoCollection<ApiUser> _users;
         private readonly string _jwtSecret;
@@ -54,7 +77,7 @@ namespace BooksApiWithAuth.Services
                 throw new ApplicationException("A user with the provided credentials does not exist");
 
             //validate the password
-            if (authHelper.ValidatePassword(returnUser, password)==false)
+            if (authHelper.ValidatePassword(returnUser, password) == false)
                 throw new ApplicationException("The password parsed is incorrect");
 
             //create jwt token
@@ -64,9 +87,10 @@ namespace BooksApiWithAuth.Services
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    //add a claim with username and role
-                    new Claim(ClaimTypes.NameIdentifier, returnUser.Username),
-                    new Claim(ClaimTypes.Role, returnUser.Role.ToString())
+                    //add a username claim
+                    new Claim(ClaimTypes.Name, returnUser.Username),
+                    //add a role claim
+                    new Claim(ClaimTypes.Role, ApiUser.GetUserRoleString(returnUser.Role))
                 }),
                 Expires = DateTime.UtcNow.AddDays(7),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -93,7 +117,7 @@ namespace BooksApiWithAuth.Services
         {
             List<ApiUser> returnUsers = _users.Find(user => true).ToList();
 
-            if(string.IsNullOrEmpty(firstName) != true)
+            if (string.IsNullOrEmpty(firstName) != true)
             {
                 List<ApiUser> filteredByFirstName = returnUsers.Where(x => x.FirstName == firstName).ToList();
                 returnUsers = filteredByFirstName;
@@ -117,7 +141,7 @@ namespace BooksApiWithAuth.Services
         public void Create(NewApiUser newApiUser)
         {
             //validate inputs
-            if(newApiUser == null)
+            if (newApiUser == null)
                 throw new ArgumentNullException();
 
             if (string.IsNullOrEmpty(newApiUser.Email))
@@ -131,7 +155,7 @@ namespace BooksApiWithAuth.Services
 
             //check username and email
             ApiUser existingUser = _users.Find(x => x.Username == newApiUser.Username || x.Email == newApiUser.Email).FirstOrDefault();
-            if(existingUser != null)
+            if (existingUser != null)
                 throw new ApplicationException("A user already exists with the provided username/email");
 
             //create ApiUser

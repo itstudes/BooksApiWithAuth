@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Threading.Tasks;
-using BooksApiWithAuth.Models;
+﻿using BooksApiWithAuth.Models;
 using BooksApiWithAuth.Services;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
 
 namespace BooksApiWithAuth.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -23,9 +21,9 @@ namespace BooksApiWithAuth.Controllers
 
         #region public routes
 
-        //[AllowAnonymous]
+        [AllowAnonymous]
         [HttpPost("register")]
-        public IActionResult Register([FromBody]NewApiUser newApiUser)
+        public IActionResult Register([FromBody] NewApiUser newApiUser)
         {
             try
             {
@@ -40,9 +38,9 @@ namespace BooksApiWithAuth.Controllers
             }
         }
 
-        //[AllowAnonymous]
+        [AllowAnonymous]
         [HttpPost("authenticate")]
-        public IActionResult Authenticate([FromBody]LoginModel newLogin)
+        public IActionResult Authenticate([FromBody] LoginModel newLogin)
         {
             try
             {
@@ -84,45 +82,30 @@ namespace BooksApiWithAuth.Controllers
             }
         }
 
-        #endregion
+        #endregion public routes
 
         #region authorized routes
 
         [HttpGet]
-        public IActionResult GetAll()
+        [Authorize(Policy = "LibraryTeam")]
+        public IActionResult Get(string? id, string? username, string? email)
         {
             try
             {
-                var users = _userService.GetAll();
-                return Ok(users);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }           
-        }
-
-        [HttpGet]
-        public IActionResult GetById(string? id)
-        {
-            try
-            {
-                var user = _userService.GetById(id);
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpGet]
-        public IActionResult GetByUsername(string? username)
-        {
-            try
-            {
-                var user = _userService.GetByUsername(username);
-                return Ok(user);
+                //get all
+                if (string.IsNullOrEmpty(id) && string.IsNullOrEmpty(username) && string.IsNullOrEmpty(email))
+                    return Ok(_userService.GetAll());
+                //get by id
+                else if (string.IsNullOrEmpty(id) == false && string.IsNullOrEmpty(username) && string.IsNullOrEmpty(email))
+                    return Ok(_userService.GetById(id));
+                //get by username
+                else if (string.IsNullOrEmpty(id) && string.IsNullOrEmpty(username) == false && string.IsNullOrEmpty(email))
+                    return Ok(_userService.GetByUsername(username));
+                //get by email
+                else if (string.IsNullOrEmpty(id) && string.IsNullOrEmpty(username) && string.IsNullOrEmpty(email) == false)
+                    return Ok(_userService.GetByEmail(email));
+                else
+                    throw new ApplicationException("Cannot find user based on 2 or more key properties");
             }
             catch (Exception ex)
             {
@@ -130,21 +113,8 @@ namespace BooksApiWithAuth.Controllers
             }
         }
 
-        [HttpGet]
-        public IActionResult GetByEmail(string? email)
-        {
-            try
-            {
-                var user = _userService.GetByUsername(email);
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpGet]
+        [HttpGet("search")]
+        [Authorize(Policy = "LibraryTeam")]
         public IActionResult Search(string? firstName, string? lastName, int? role)
         {
             try
@@ -169,6 +139,7 @@ namespace BooksApiWithAuth.Controllers
         }
 
         [HttpDelete]
+        [Authorize(Roles = "LibraryAdmin")]
         public IActionResult Delete(string id)
         {
             try
@@ -179,10 +150,9 @@ namespace BooksApiWithAuth.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
-
-            }            
+            }
         }
 
-        #endregion
+        #endregion authorized routes
     }
 }

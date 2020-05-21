@@ -1,10 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BooksApiWithAuth.Models
 {
@@ -48,43 +44,52 @@ namespace BooksApiWithAuth.Models
             {
                 case 1:
                     return UserRoles.unassigned;
+
                 case 2:
                     return UserRoles.libraryAdmin;
+
                 case 3:
                     return UserRoles.libraryStaff;
+
                 case 4:
-                    return UserRoles.author;
-                case 5:
-                    return UserRoles.proofReader;
-                case 6:
-                    return UserRoles.publisher;
-                case 20:
-                    return UserRoles.standardMembershipReader;
-                case 21:
-                    return UserRoles.specialMembershipReader;
-                case 22:
-                    return UserRoles.exclusiveMembershipReader;
+                    return UserRoles.libraryMember;
+
                 default:
                     return UserRoles.noRole;
+            }
+        }
+
+        public static string GetUserRoleString(UserRoles role)
+        {
+            switch (role)
+            {
+                case UserRoles.noRole:
+                    return "NoRole";
+
+                case UserRoles.unassigned:
+                    return "Unassigned";
+
+                case UserRoles.libraryAdmin:
+                    return "LibraryAdmin";
+
+                case UserRoles.libraryStaff:
+                    return "LibraryStaff";
+
+                case UserRoles.libraryMember:
+                    return "LibraryMember";
+
+                default:
+                    return "NoRole";
             }
         }
     }
 
     public enum UserRoles
     {
-        //roles 0 - 19 are for staff/general
         noRole = 0,
         unassigned = 1,
         libraryAdmin = 2,
         libraryStaff = 3,
-        author = 4,
-        proofReader = 5,
-        publisher = 6,
-        //roles 20 - 39 are for members
-        standardMembershipReader = 20,
-        specialMembershipReader = 21,
-        exclusiveMembershipReader = 22
+        libraryMember = 4
     }
-
-    
 }
